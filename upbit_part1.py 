@@ -1,0 +1,74 @@
+import requests,json
+import pandas as pd
+
+# 1. Parse the JSON response from the API request into a Pandas DataFrame. 
+# The DataFrame should have columns 
+# for "timestamp" (date and time of the candle), "open" (opening price of the candle), 
+# "high" (highest price during the candle), "low" (lowest price during the candle), 
+# and "close" (closing price of the candle). 
+
+# GET JSON
+url = "https://th-api.upbit.com/v1/candles/days?market=THB-BTC&count=200"
+response=requests.get(url)
+data = response.json()
+
+df = pd.json_normalize(data)
+
+df = pd.DataFrame(data, columns=["candle_date_time_utc", "opening_price", "high_price", "low_price", "trade_price"])
+
+df.rename(columns={
+        'candle_date_time_utc': 'timestamp',
+        'opening_price': 'open',
+        'high_price': 'high',
+        'low_price': 'low',
+        'trade_price': 'close'
+    }, inplace=True)
+
+df.to_csv("upbit_data.csv", index=False)
+
+
+# 2. Calculate and display the following statistics from the DataFrame: 
+# - Maximum closing price and the corresponding date. 
+# - Minimum closing price and the corresponding date. 
+# - Average closing price over the entire dataset. 
+
+# Maximum closing price and the corresponding date. 
+max_close = df['close'].max()
+max_close_date = df[df['close'] == max_close]['timestamp'].values[0]
+
+print(f"Maximum Closing Price: {max_close} on {max_close_date}")
+
+# Minimum closing price and the corresponding date.
+min_close = df['close'].min()
+min_close_date = df[df['close'] == min_close]['timestamp'].values[0]
+
+print(f"Minimum Closing Price: {min_close} on {min_close_date}")
+
+# Average closing price over the entire dataset. 
+average_close = df['close'].mean()
+
+print(f"Average Closing Price: {average_close}")
+
+
+#3. Create a new column in the DataFrame called "price_change" that represents the absolute price change (difference between closing price and opening price) for each candle. 
+
+
+df['price_change'] = abs(df['close'] - df['open'])
+
+
+# 4. Filter the DataFrame to select rows where the "price_change" is greater than 1000 THB. Display the first 5 rows of the filtered DataFrame. 
+
+filter = df[df['price_change'] > 1000]
+print(filter.head(5))
+
+
+# 5. Calculate the correlation between the "price_change" column and the "high" column in the DataFrame. 
+
+correlation = df['price_change'].corr(df['high'])
+
+print("Correlation between 'price_change' and 'high' columns:", correlation)
+
+
+# 6. Export the filtered DataFrame to a CSV file named "upbit_data.csv." 
+df.to_csv("upbit_data.csv", index=False)
+
